@@ -6,29 +6,66 @@ import Foundation
 import RxSwift
 
 /*:
- # Buffer
+ ## Buffer
  Periodically gathers items emmited by an `observable` then emits a bundle of them as a *single event*
  
  > In case of error, even if with a complete buffer, it will emit the error immediately
+ >
+ > if `count` value breaks evenly the number of events emitted, it will send an **`empty valued event`**, then a **`completion event`**
  
- ![Buffer](transform_buffer.png)
+ ![Buffer](buffer.png)
  */
 example("Buffer") {
     let bag = DisposeBag()
-    Observable.of("0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟")
-        .buffer(timeSpan: 0.4, count: 3, scheduler: MainScheduler.instance)
-        .subscribe(onNext: { printEventReceived("🦁", $0) })
+    Observable.of("0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣")
+        .buffer(timeSpan: 0.4,
+                count: 5, //use different count values to see what happens
+                scheduler: MainScheduler.instance)
+        .subscribe { printEventReceived("🦁", $0) }
         .addDisposableTo(bag)
 }
+
 /*:
- # Map
+ ## Window
+ Periodically subdivide items from an `Observable` into `Observable windows` and emit these windows
+ 
+ > Similar to `Buffer`, but instead of sending a event with a *collection of items*, it sends an `Observable` of those elements
+ >
+ > If `count` value breaks evenly the number of events emitted, it will send an **`empty valued event`**, then a **`completion event`**
+ 
+ ![Window](window.png)
+ 
+ */
+example("Window") {
+    let bag = DisposeBag()
+    Observable.of(0,1,2,3,4,5,6,7,8,9)
+        .window(timeSpan: 0,
+                count: 5, // Change the value of count and notice the final events
+                scheduler: MainScheduler.instance)
+        .subscribe { event in
+            switch event {
+            case .next(let window):
+                print("-- Window --")
+                window.subscribe { printEventReceived("🦁", $0) }
+            case .error(let error):
+                printErrorReceived("🦁", error)
+            case .completed:
+                print("-- No More Windows --")
+            }
+            
+        }
+        .addDisposableTo(bag)
+}
+
+/*:
+ ## Map
  Transforms the items emitted by an `Observable` by *applying a function* to each item
  
  **`f(a) -> b`**
  
- ![Map](transform_map.png)
+ ![Map](map.png)
  */
-example("map") {
+example("Map") {
     let bag = DisposeBag()
     Observable.of("⚽️","🏀","🏈")
         .map { $0 + $0 }
@@ -37,70 +74,44 @@ example("map") {
 }
 
 /*:
- # Flat Map
+ ## Flat Map
  Transforms the elements emitted by and observable sequence into observable sequences
  
  Then flattens the emissions to a single `Observable`
  
- ![Flat Map](transform_flatmap.png)
+ ![Flat Map](flatmap.png)
 
+ > Note that `FlatMap` **merges** the emissions from these `Observables`, so they may *interleave*
+ >
  > If using `latest`, it will effectively become a `switch`
  
  */
-example("Flat Map (latest)") {
+example("Flat Map") {
     let bag = DisposeBag()
-    struct Player {
-        var score: Variable<Int>
-    }
-    
-    let p1 = Player(score: Variable(1))
-    let p2 = Player(score: Variable(10))
-    let player = Variable(p
-        
-        player.asObservable()
-//            .flatMapLatest { $0.score.asObservable() } //change to this and see how it behaves
-            .flatMap { $0.score.asObservable() }
-            .subscribe(onNext: { print($0) })
-            .addDisposableTo(bag)
-        p1.score.value = 2
-        p1.score.value = 3
-        player.value = p2
-        p1.score.value = 4 // not emitted when using flatMapLatest
-        p2.score.value = 12
+    Observable.of("🎾","🏐","🏉")
+        .flatMap { Observable.of($0,$0,$0) }
+        .subscribe(onNext: { printEventReceived("🦁", $0) })
+        .addDisposableTo(bag)
 }
 
 
-/* 
+/*:
  ## Scan
  Applies a function sequentially and emits each successive value
  
- ![Scan](transform_scan.png)
+ ![Scan](scan.png)
+ 
+ > Differently from `Reduce`, it will emit for each **successful succession**
+ 
  */
-example("scan") {
+example("Scan") {
     let bag = DisposeBag()
-    
-    Observable.of(10, 100, 1000)
-        .scan(1) { result, value in
-            result + value }
+    Observable.of("1️⃣","2️⃣","3️⃣","4️⃣")
+        .scan("0️⃣") { $0 + $1 }
         .subscribe(onNext: { print($0) })
         .addDisposableTo(bag)
 }
 
-/* 
- ## Reduce
- Applies a funcion sequentially but emits only after reaching the final value 
- 
- ![Reduce](transform_reduce.png)
- */
-example("reduce") {
-    let bag = DisposeBag()
-    
-    Observable.of(1,3,5,8)
-        .reduce(0) { result, value in
-            result + value }
-        .subscribe(onNext: { print($0) })
-        .addDisposableTo(bag)
-}
 
 /*:
  ----

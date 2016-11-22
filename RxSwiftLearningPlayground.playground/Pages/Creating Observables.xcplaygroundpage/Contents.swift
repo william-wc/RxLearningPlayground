@@ -11,7 +11,7 @@ import RxSwift
  ## Empty
  Sends only the **`completed`** event
  
- ![Empty](observable_empty.png)
+ ![Empty](empty.png)
  */
 example("Empty") {
     let bag = DisposeBag()
@@ -30,11 +30,11 @@ example("Empty") {
  ## Throw
  * Sends only an **error** event
  
- ![Throw](observable_throw.png)
+ ![Throw](throw.png)
  */
 example("Throw") {
     let bag = DisposeBag()
-    Observable.error(RxLearningError.doIt)
+    Observable.error(SimpleError.ez)
         .subscribe { (e: Event<Any>) in
             switch e {
             case .next(_):      printEventReceived("🐑", "Nothing")
@@ -49,7 +49,7 @@ example("Throw") {
  ## Never
  Doesn't send any events, ergo, it **never** finishes
  
- ![Never](observable_never.png)
+ ![Never](never.png)
  */
 example("Never") {
     let bag = DisposeBag()
@@ -69,8 +69,10 @@ example("Never") {
  This `Observable` contains only *one* element
  
  It will send an event with the element, then the completion event
+ 
+ ![Just](just.png)
  */
-example("Simple Observer") {
+example("Just") {
     let bag = DisposeBag()
     Observable
         .just("🍏")
@@ -80,28 +82,37 @@ example("Simple Observer") {
     // The bag goes with it, taking the <anonymous> observer we added when we subscribed
 }
 /*:
- ## Of
+ ## From / Of
  This `Observable` contains a collection of elements, *from the same **type***
  
  After sending each element, will send the completion event
+ 
+ ![From](from.png)
  */
 example("Of") {
     let bag = DisposeBag()
     Observable
-        .of("🍏","🍎","🍐","🍊","🍋")
+        .from(["🍏","🍎","🍐","🍊","🍋"])
+        //.of("🍏","🍎","🍐","🍊","🍋")        // Since Swift accepts Variadic Parameters, it can be defined by `.of` or `.from`
         .subscribe(onNext: { printEventReceived("🐓", $0) })
         .addDisposableTo(bag)
 }
+
 /*:
- ## From
- Same as above, but receiving a *collection directly*
+ ## Generate
+ Creating an `Observable` using: 
+ * Initial state
+ * Continuing condition
+ * Iteration
  
- After sending each element, will send the completion event
+ Useful to generate a sequence of elements
  */
-example("From") {
+example("Generate") {
     let bag = DisposeBag()
     Observable
-        .from(["🍏","🍎","🍐","🍊","🍋"])
+        .generate(initialState: 0,
+                  condition: { $0 < 10 }, // Once the condition gets it's first `false`, it will stop generating values
+                  iterate: { $0 + 2 })
         .subscribe(onNext: { printEventReceived("🐓", $0) })
         .addDisposableTo(bag)
 }
@@ -111,6 +122,8 @@ example("From") {
  Creating an `Observable` with a closure
  
  Useful when dealing with data that *mutates* according to the *enviroment*
+ 
+ ![Create](create.png)
  */
 example("Create") {
     let bag = DisposeBag()
@@ -125,14 +138,16 @@ example("Create") {
         .addDisposableTo(bag)
 }
 /*:
- ## Deferred
+ ## Defer
  Much like the above, a *`deferred Observer`* is actually a **factory** of *`Observers`*
  
  Which means: 
  * It waits for subscriptions
  * And every time there is a new subscription, it will **generate** a new *`Observable`*
+ 
+ ![Defer](defer.png)
  */
-example("Deferred") {
+example("Defer") {
     let bag = DisposeBag()
     var count = 0
     let observable = Observable.deferred({ () -> Observable<Int> in
@@ -201,6 +216,8 @@ example("Multiple Observers") {
     observable
         .subscribe(onNext: { printEventReceived("🐿", $0) })
         .addDisposableTo(bag)
+    // Both will go through the same values, at the same order
+    // More on this is explained in `Subjects`
 }
 
 /*:

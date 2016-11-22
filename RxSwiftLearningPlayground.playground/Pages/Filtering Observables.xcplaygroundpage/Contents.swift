@@ -1,84 +1,185 @@
-
-//: # Filtering
-
+/*:
+ # Filtering Observables
+ Operators that selectively emit items from a source `Observable`
+*/
 import Foundation
 import RxSwift
-
-/* Only emits if a certain timespan has passed without it emitting another item, 
- and always the last item (for that time frame) */
+/*:
+ # Debounce
+ Only emits an item from an `Observable` if a certain timespan has passed without it sending another item
+ 
+ ![Debounce](debounce.png)
+ 
+ */
 example("Debounce") {
     let bag = DisposeBag()
-    Observable.of(0,1,2,3,4,5)
-        .debounce(0.2, scheduler: MainScheduler.instance)
-        .subscribe { print($0) }
-        .addDisposableTo(bag)
-}
-
-/* Emits only when condition is satisfied */
-example("filter") {
-    let bag = DisposeBag()
-    Observable.from(0...9)
-        .filter { $0 % 2 == 0 }
+    // TODO change Scheduler
+    Observable
+        .create { (observer: AnyObserver<String>) -> Disposable in
+            observer.onNext("a")
+            Thread.sleep(forTimeInterval: 0.5)
+            observer.onNext("b")
+            observer.onNext("c")
+            Thread.sleep(forTimeInterval: 0.2)
+            observer.onNext("d")
+            return Disposables.create()
+        }
+        .debounce(0.1, scheduler: ConcurrentMainScheduler.instance)
         .subscribe(onNext: { print($0) })
         .addDisposableTo(bag)
 }
 
-/* Emits only when the value is different from the previous one */
-example("distinct until changed") {
-    let bag = DisposeBag()
-    Observable.of(0,0,1,1,1,2,3,3,4)
-        .distinctUntilChanged()
-        .subscribe(onNext: { print($0) })
-        .addDisposableTo(bag)
-}
-
-/* Emits the element picked at a certain position / index */
-example("element at") {
-    let bag = DisposeBag()
-    Observable.from(0...9)
-        .elementAt(5)
-        .subscribe(onNext: { print($0) })
-        .addDisposableTo(bag)
-}
-
-/* Emits only the first element 
- throws error if there is not exactly one event */
-example("single") {
-    let bag = DisposeBag()
-    Observable.of(1,2,3)
-        .single()
-        .subscribe(onNext: { print($0) })
-        .addDisposableTo(bag)
-}
-
-/* Emits only the first element which meets the condition
- throws error if there is not exactly one event */
-example("single with condition") {
-    let bag = DisposeBag()
-    Observable.from(0...9)
-        .single { $0 == 9 }
-        .subscribe(onNext: { print($0) })
-        .addDisposableTo(bag)
-}
-
-/* 
- Skips the first elements that meet the condition 
- SkipLast()
- Take()
- TakeLast()
+/*:
+ # Distinct
+ Supresses duplicates items already emitted
+ 
+ ![Distinct](distinct.png)
+ 
  */
-example("observer repeat element") {
+example("Distinct") {
     let bag = DisposeBag()
-    Observable.repeatElement("Just")
-        .take(5)
-        .subscribe { print($0) }
+    Observable.of("⚽","⚽","🏀","⚽","🏈","🏈","🏈","🏐","🏐")
+        .distinctUntilChanged()
+        .subscribe { printEventReceived("🐹", $0) }
         .addDisposableTo(bag)
 }
 
-example("skip") {
+/*:
+ # Filter
+ Emit only items that pass the predicate test
+ 
+ ![Filter](filter.png)
+ 
+ */
+example("Filter") {
     let bag = DisposeBag()
-    Observable.from(0...9)
-        .skip(4)
-        .subscribe(onNext: { print($0) })
+    Observable.of("⚽","🏀","🏈","🎾","🏐","🏉")
+        .filter { $0 == "🏐" || $0 == "🎾" }
+        .subscribe { printEventReceived("🐹", $0) }
         .addDisposableTo(bag)
 }
+
+/*:
+ # IgnoreElements
+ Ignores emissions of items, but sends the termination notification (**`Error or Completion`**)
+ 
+ ![IgnoreElements](ignore_elements.png)
+ 
+ */
+example("Ignore Elements") {
+    let bag = DisposeBag()
+    Observable.of("⚽","🏀","🏈","🎾","🏐","🏉")
+        .ignoreElements()
+        .subscribe { printEventReceived("🐹", $0) }
+        .addDisposableTo(bag)
+}
+
+/*:
+ # Sample
+ Emit only the last item emitted by the source `Observable`
+ 
+ ![Sample](sample.png)
+ 
+ */
+example("Sample") {
+    let bag = DisposeBag()
+    // Todo
+}
+
+/*:
+ # Single
+ Emits only if there is *exactly* one item
+ 
+ Or if the predicate filters *exactly* one item
+ 
+ */
+example("Single") {
+    let bag = DisposeBag()
+    // Single with only one item
+    Observable.of("⚽")
+        .single()
+        .subscribe { printEventReceived("🐹", $0) }
+        .addDisposableTo(bag)
+    // Single with multiple items
+    Observable.of("⚽","🏀","🏈","🎾","🏐","🏉")
+        .single()
+        .subscribe { printEventReceived("🐹", $0) }
+        .addDisposableTo(bag)
+    // Single that filters only one item
+    Observable.of("⚽","🏀","🏈","🎾","🏐","🏉")
+        .single { $0 == "🏀" }
+        .subscribe { printEventReceived("🐹", $0) }
+        .addDisposableTo(bag)
+    // Single that filters multiple items
+    Observable.of("⚽","🏀","🏈","🎾","🏐","🏉")
+        .single { $0 == "🏀" || $0 == "🏐" }
+        .subscribe { printEventReceived("🐹", $0) }
+        .addDisposableTo(bag)
+}
+
+/*:
+ # ElementAt
+ Emits only the nᵗʰ item
+ 
+ ![ElementAt](element_at.png)
+ 
+ */
+example("Element At") {
+    let bag = DisposeBag()
+    Observable.of("⚽","🏀","🏈","🎾","🏐","🏉")
+        .elementAt(3)
+        .subscribe { printEventReceived("🐹", $0) }
+        .addDisposableTo(bag)
+}
+
+/*:
+ # Skip / SkipUntil / SkipWhile
+ Supresses the first *n* items
+ 
+ ![Skip](skip.png)
+ 
+ */
+example("Skip") {
+    let bag = DisposeBag()
+    Observable.of("⚽","🏀","🏈","🎾","🏐","🏉")
+        .skip(3)
+        .subscribe { printEventReceived("🐹", $0) }
+        .addDisposableTo(bag)
+}
+
+/*:
+ # Take / TakeUntil / TakeWhile
+ Emits only the first *n* items
+ 
+ ![Take](take.png)
+ 
+ */
+example("Take") {
+    let bag = DisposeBag()
+    Observable.of("⚽","🏀","🏈","🎾","🏐","🏉")
+        .take(5)
+        .subscribe { printEventReceived("🐹", $0) }
+        .addDisposableTo(bag)
+}
+
+/*:
+ # TakeLast
+ Emits only the last *n* items *in emission order* (items before the termination notification)
+ 
+ ![TakeLast](take_last.png)
+ 
+ */
+example("Take Last") {
+    let bag = DisposeBag()
+    Observable.of("⚽","🏀","🏈","🎾","🏐","🏉")
+        .takeLast(3)
+        .subscribe { printEventReceived("🐹", $0) }
+        .addDisposableTo(bag)
+}
+
+
+/*:
+ ----
+ [< Previous](@previous) |
+ [Next >](@next)
+ */

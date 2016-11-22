@@ -17,9 +17,11 @@
  # Observer
  Is a subject that reacts to **events received** from an `Observable`
  
- ![Observable Legend](observable_legend.png)
+ ![Legend](legend.png)
  
  ----
+ > Once a `Observable` emits the **`completed or error`** event, it will cease emitting any items
+ 
  > There are different ways of subscribing to an Observable, in this playground I'll be using two:
  >
  > `.subscribe { }`
@@ -42,5 +44,10 @@
  > When a DisposeBag is deinitialized, it will also remove all of its content with it
  >
  > And make sure it is deinitialized later (avoid memory retaining cycles)
+
  
+ ----
+ [< Previous](@previous) |
+ [Next >](@next)
+
  */

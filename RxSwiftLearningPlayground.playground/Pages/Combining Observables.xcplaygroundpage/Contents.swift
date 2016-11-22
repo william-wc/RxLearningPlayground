@@ -1,20 +1,56 @@
+/*: 
+ # Combining Observables
+ Operators that work with multiple source `Observables` to create a single `Observable`
+*/
 import Foundation
 import RxSwift
-import RxCocoa
-
-//: # Combining Observables
+/*:
+ ## Merge
+ Combine multiple `Observables` into one by merging their emissions *(but not their elements)*
+ > Their elements must be of **same type** (or at least **same subclass**)
+ 
+ ![Merge](merge.png)
+ */
+example("Merge") {
+    let bag     = DisposeBag()
+    let frog    = PublishSubject<String>()
+    let chicken = PublishSubject<String>()
+    
+    func frogSends(_ event: String) {
+        printEventSent("🐸", event)
+        frog.onNext(event)
+    }
+    func chickenSends(_ event: String) {
+        printEventSent("🐔", event)
+        chicken.onNext(event)
+    }
+    
+    Observable.of(frog, chicken)
+        .merge()
+        .subscribe(onNext: { printEventReceived("🌝", $0) })
+        .addDisposableTo(bag)
+    
+    frogSends("⚽")
+    chickenSends("🏈")
+    frogSends("🏀")
+    frogSends("🎾")
+    frogSends("🏐")
+    chickenSends("🏉")
+}
 
 /*:
-//: ### Combine Latest
- > Combines events received from it's subjects and send them as a single new event
- > Latest (or most recent) events only
+ ## Combine Latest
+ When an Item is emitted by either `Observable`, combine the **latest** item emitted by **each** via a *function* and emit the result(s)
+ > Unlike `merge`, the source `Observables` don't have to be necessarily from same type
+ 
+ ![Combine Latest](combine_latest.png)
  */
-
 example("Combine Latest") {
     let bag = DisposeBag()
     var nextText: String = ""
-    let A = PublishSubject<String>()
-    let B = PublishSubject<Int>()
+    let A = PublishSubject<String>() // Sources don't have to be
+    let B = PublishSubject<Int>()    // Necessarialy of same type
+    
     Observable
         .combineLatest(A, B) { ($0,$1) }
         .subscribe(onNext: {
@@ -34,34 +70,13 @@ example("Combine Latest") {
 }
 
 
-/*:
-//: ### Merge
- > Merges the events from different observers to a single one
- > they are not dependent from each other
- > Their elements must be of SAME TYPE or at least SAME SUBCLASS)
- */
-example("Merge") {
-    let bag = DisposeBag()
-    var orderReceived = [String]()
-    let a = PublishSubject<String>()
-    let b = PublishSubject<String>()
-    Observable.of(a, b)
-        .merge()
-        .subscribe(onNext: { orderReceived.append($0) })
-        .addDisposableTo(bag)
-    
-    a.onNext("🅰️")
-    a.onNext("🅱️")
-    b.onNext("①")
-    b.onNext("②")
-    a.onNext("🆎")
-    b.onNext("③")
-    print("Order received: ", orderReceived)
-}
+
 
 /*:
-//: ### Start With
- Starts a subscription with a new value inserted before others currently within the observable
+ ## Start With
+ Emit a specified sequence of items *before* beginning to emit the items from the source `Observable`
+ 
+ ![Start With](start_with.png)
  */
 example("Start With") {
     let bag = DisposeBag()
@@ -78,58 +93,77 @@ example("Start With") {
 }
 
 /*:
-//: ### Switch
- A switch subscribes to a Observable that emits Observables and emits it's events
- Each time a new Observable is emitted, it will automatically unsubscribe from the previous one
- http://reactivex.io/documentation/operators/images/switch.c.png
+ ## Switch
+ Convert an `Observable` that emits `Observables` into a single `Observable` that emits the items emitted by the most-recently-emitted of those `Observables`
+ 
+ ![Switch](switch.png)
  */
 example("Switch") {
     let bag = DisposeBag()
     var nextString = ""
-    let a = BehaviorSubject(value: "⚽️")
-    let b = BehaviorSubject(value: "🍎")
-    let variable = Variable(a)
+    let chicken = BehaviorSubject(value: "🍏")
+    let hamster = BehaviorSubject(value: "🍉")
     
+    func chickenSends(_ event: String) {
+        printEventSent("🐔", event)
+        chicken.onNext(event)
+    }
+    func hamsterSends(_ event: String) {
+        printEventSent("🐹", event)
+        hamster.onNext(event)
+    }
+    
+    let variable = Variable(chicken)
     variable.asObservable()
         .switchLatest()
-        .subscribe(onNext: { print(nextString, " received event: ", $0) })
+        .subscribe(onNext: { printEventReceived("🐙", $0) })
         .addDisposableTo(bag)
     
-    nextString = "A emited 🅰️,"
-    a.onNext("🅰️")
-    nextString = "A emited 🅱️,"
-    a.onNext("🅱️")
-    print("< Switching Variable >")
-    variable.value = b
-    nextString = "A emited : 🆎"
-    a.onNext("🆎") //Event is ignored by switch
-    nextString = "B emited ①,"
-    b.onNext("①")
-    nextString = "B emited ②,"
-    b.onNext("②")
+    chickenSends("🍊")
+    print("< Switching Variable to 🐹 >")
+    variable.value = hamster
+    chickenSends("🍎") //Event is ignored by switch
+    hamsterSends("🍆")
 }
 
-/*
-//: ### Zip
+/*:
+ ## Zip
  Combines the events received by it's subjects and sends them as a single event
- In the order received (combining indexes)
- Will only emit an event if all subjects have had an event
+ In the order received *(combining indexes)*
+ 
+ Will only emit an event if all subjects have had an event *(at same index)*
+ 
+ ![Zip](zip.png)
  */
 example("Zip") {
-    let bag = DisposeBag()
-    let a = PublishSubject<String>()
-    let b = PublishSubject<Int>()
+    let bag     = DisposeBag()
+    let panda   = PublishSubject<String>()
+    let chicken = PublishSubject<Int>()
     
-    Observable.zip(a, b) { "\($0) \($1)" }
-        .subscribe(onNext: { print($0) })
+    func pandaSends(_ event: String) {
+        printEventSent("🐼", event)
+        panda.onNext(event)
+    }
+    func chickenSends(_ event: Int) {
+        printEventSent("🐔", event)
+        chicken.onNext(event)
+    }
+    
+    Observable.zip(panda, chicken) { "(\($0),\($1))" }
+        .subscribe(onNext: { printEventReceived("🌝", $0) })
         .addDisposableTo(bag)
-    
-    a.onNext("🅰️")
-    a.onNext("🅱️")
-    b.onNext(1)
-    b.onNext(2)
-    print("< B Sent one now >")
-    a.onNext("🆎")
-    b.onNext(3)
-    b.onNext(4)
+    pandaSends("🍉") // Nothing happens
+    pandaSends("🍏") // Nothing happens
+    chickenSends(11) // Zip (0,0)
+    chickenSends(22) // Zip (1,1)
+    pandaSends("🍎") // Nothing happens
+    chickenSends(33) // Zip (2,2)
+    chickenSends(44) // Nothing happens
 }
+
+
+/*:
+ ----
+ [< Previous](@previous) |
+ [Next >](@next)
+ */

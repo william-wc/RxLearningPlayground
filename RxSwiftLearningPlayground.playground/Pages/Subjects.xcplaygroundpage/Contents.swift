@@ -14,9 +14,9 @@ import RxSwift
  ## PublishSubject
  Broadcasts the events received by it's source, to all subscribers as soon as it is received 
  
- ![Publish Subject](subject_publish.png)
+ ![Publish Subject](publish.png)
  
- > This is the standard Subject
+ > This is the standard Subject for event-related targets (button, text, etc)
  */
 example("Publisher") {
     let bag = DisposeBag()
@@ -28,7 +28,7 @@ example("Publisher") {
             .addDisposableTo(bag)
     }
     let sendEvent = {(_ event: String) in
-        printEventSent(event)
+        printEventSent("", event)
         subject.onNext(event)
     }
     
@@ -45,7 +45,7 @@ example("Publisher") {
  
  Then continues to emit any other items emitted by it's source Observable(s)
  
- ![Behavior Subject](subject_behavior.png)
+ ![Behavior Subject](behavior.png)
  */
 example("Behavior") {
     let bag = DisposeBag()
@@ -57,7 +57,7 @@ example("Behavior") {
             .addDisposableTo(bag)
     }
     let sendEvent = {(_ event: String) in
-        printEventSent(event)
+        printEventSent("", event)
         subject.onNext(event)
     }
 
@@ -77,7 +77,7 @@ example("Behavior") {
  >
  > And the *buffer* behaves as `FIFO`
  
- ![Replay Subject](subject_replay.png)
+ ![Replay Subject](replay.png)
  */
 example("Replay") {
     let bag = DisposeBag()
@@ -89,7 +89,7 @@ example("Replay") {
             .addDisposableTo(bag)
     }
     let sendEvent = {(_ event: String) in
-        printEventSent(event)
+        printEventSent("", event)
         subject.onNext(event)
     }
     
@@ -103,9 +103,9 @@ example("Replay") {
 }
 /*:
  ## Variable
- A `Variable` wraps a `BehaviorSubject`
+ A `Variable` wraps the `BehaviorSubject`, in a way that it becomes easier to use
  
- > A `Variable` will **never** emit an **Error**
+ *such as if it was a normal variable*
  */
 example("Variable") {
     let bag = DisposeBag()

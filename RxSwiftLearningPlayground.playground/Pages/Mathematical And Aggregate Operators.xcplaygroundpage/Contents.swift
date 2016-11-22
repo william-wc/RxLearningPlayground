@@ -1,53 +1,76 @@
-
-//: # Mathematical and Aggregate Operators
-
+/*:
+ # Mathematical and Aggregate Operators
+ Operators that operate on the entire sequence of items emitted by an Observable 
+ 
+ It is a complement of `Transforming Observables`
+*/
 import Foundation
 import RxSwift
 
 
-//: ## Concat
-//: ### Concatenates the elements in a sequential manner, waiting for each sequence to terminate before emiting the next one's values
+/*: 
+ ## Concat
+ Concatenates the elements in a sequential manner, waiting for each sequence to terminate before emiting the next one's values
+ 
+ ![Concat](concat.png)
+*/
 example("Concat") {
     let bag = DisposeBag()
-    var sentA = ["🌱","🎄","🌲","🌳"]
-    var sentB = ["🌚","🌑","🌓","🌕"]
     var receivedOrder = [String]()
-    let a = BehaviorSubject(value: "🌱")
-    let b = BehaviorSubject(value: "🌚")
-    let variable = Variable(a)
+    let panda       = ReplaySubject<String>.createUnbounded()
+    let hamster     = ReplaySubject<String>.createUnbounded()
     
-    variable.asObservable()
-        .concat()
-        .subscribe(onNext: { receivedOrder.append($0) })
+    func pandaSends(_ event: String) {
+        printEventSent("🐼", event)
+        panda.onNext(event)
+    }
+    func hamsterSends(_ event: String) {
+        printEventSent("🐹", event)
+        hamster.onNext(event)
+    }
+    panda.concat(hamster)
+        .subscribe(onNext: {
+            receivedOrder.append($0)
+            printEventReceived("🌝", $0)
+        })
         .addDisposableTo(bag)
-    a.onNext(sentA[1])
-    a.onNext(sentA[2])
-    b.onNext(sentB[1])  // this value is ignored, since it's not the focused subject
-    variable.value = b  // from this point ownward, the values from B will be registered
-    b.onNext(sentB[2])
-    a.onNext(sentA[3])  // even though the variable changed, it will still recognize A until completed
-    a.onCompleted()
-    b.onNext(sentB[3])
     
-    print("Sent from A   : ", sentA)
-    print("Sent from B   : ", sentB)
+    pandaSends("⚽")
+    pandaSends("🏀")
+    hamsterSends("🌕")
+    hamsterSends("🌗")
+    pandaSends("🏈")
+    panda.onCompleted()
+    print("🐼 completed")
+    hamsterSends("🌑")
     print("Received order: ", receivedOrder)
 }
 
+/*:
+ ## Reduce
+ Applies a funcion sequentially but emits only after reaching the final value
+ 
+ ![Reduce](reduce.png)
+ 
+ > Differently from `Scan`, it will emit only when it reaches the **last succession**
+ 
+ */
+example("Reduce") {
+    let bag = DisposeBag()
+    Observable.of("🌖","🌗","🌘","🌑")
+        .reduce("🌕") { $0 + $1 }
+        .subscribe(onNext: { print($0) })
+        .addDisposableTo(bag)
+}
 
-//: ## Count
 
-//: ## Min / Max
-
-//: ## Reduce
-
-//: ## Sum
-
-//: ## Average
-
-//: ## To Array
-//: ### Converts a sequence into an array and emits a single event containing it **must be finite or it won't be called**
-example("to array") {
+/*: 
+ ## To Array
+ Converts a sequence into an array and emits a single event containing it **must be finite or it won't be called**
+ 
+![To Array](to_array.png)
+*/
+example("To Array") {
     let bag = DisposeBag()
     Observable.from(0...9)
         .toArray()
@@ -55,6 +78,8 @@ example("to array") {
         .addDisposableTo(bag)
 }
 
-
-//: [Next](@next)
-//: [Previous](@previous)
+/*:
+ ----
+ [< Previous](@previous) |
+ [Next >](@next)
+ */
