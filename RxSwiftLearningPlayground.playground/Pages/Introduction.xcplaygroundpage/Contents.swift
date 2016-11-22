@@ -35,15 +35,15 @@
  
  ----
  ### Table of Contents
- 1. [Creating Observables](Creating)
- 2. [Transforming Observables](Transforming)
- 3. [Filtering Observables](Filtering)
- 4. [Combining Observables](Filtering)
- 5. [Error Handling Operators]()
- 6. [Observable Utility Operators]()
- 7. [Conditional and Boolean Operators]()
- 8. [Mathematical and Aggregate Operators]()
- 9. [Connectables]()
- 
+ 1. [Observables and Observers](Observables%20and%20Observers)
+ 2. [Creating Observables](Creating%20Observables)
+ 3. [Subjects](Subjects)
+ 4. [Transforming Observables](Transforming%20Observables)
+ 5. [Filtering Observables](Filtering%20Observables)
+ 6. [Combining Observables](Combining%20Observables)
+ 7. [Error Handling Operators](Error%20Handling%20Operators)
+ 8. [Conditional and Boolean Operators](Conditional%20And%20Boolean%20Operations)
+ 9. [Mathematical and Aggregate Operators](Mathematical%20And%20Aggregate%20Operators)
+ 10. [Observable Utility Operators](Observable%20Utility%20Operators)
  
  */
